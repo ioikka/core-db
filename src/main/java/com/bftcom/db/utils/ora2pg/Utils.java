@@ -28,6 +28,7 @@ import org.jumpmind.db.platform.oracle.OracleDatabasePlatform;
 import org.jumpmind.db.platform.oracle.OracleDdlReader;
 import org.jumpmind.db.platform.postgresql.PostgreSqlDatabasePlatform;
 import org.jumpmind.db.sql.ISqlTemplate;
+import org.jumpmind.db.sql.SqlException;
 import org.jumpmind.symmetric.io.data.DbExport;
 import org.jumpmind.symmetric.model.Sequence;
 import org.postgresql.util.PSQLException;
@@ -299,17 +300,19 @@ public class Utils {
 
     List<Sequence> seqs = srcPlatform.getSqlTemplate().query(srcSqlStatements.getAllSequences(), new OracleSequenceRowMapper());
 
-    List<String> sqls = new ArrayList<>();
     for (Sequence seq : seqs) {
       String createSeqSql = dstSqlStatements.createSequence(seq, true);
       String dropSeqSql = dstSqlStatements.dropSequence(seq);
-      sqls.add(dropSeqSql);
-      sqls.add(createSeqSql);
-    }
-
-    for (String sql : sqls) {
-      dstPlatform.getSqlTemplate().update(sql);
-      logger.debug("");
+      try {
+        dstPlatform.getSqlTemplate().update(dropSeqSql);
+      } catch (SqlException e) {
+        logger.warn("Sequence " + seq.getSequenceName() + " could not be dropped.", e);
+      }
+      try {
+        dstPlatform.getSqlTemplate().update(createSeqSql);
+      } catch (SqlException e) {
+        logger.error("Sequence " + seq.getSequenceName() + " could not be created.", e);
+      }
     }
   }
 

@@ -1,6 +1,7 @@
 package com.bftcom.db.postgresql;
 
 import org.jumpmind.db.model.Column;
+import org.jumpmind.db.model.Table;
 import org.jumpmind.db.platform.postgresql.PostgreSqlDatabasePlatform;
 import org.jumpmind.db.platform.postgresql.PostgreSqlDdlBuilder;
 import org.jumpmind.db.platform.postgresql.PostgreSqlJdbcSqlTemplate;
@@ -44,6 +45,12 @@ public class BftPostgreSqlDatabasePlatform extends PostgreSqlDatabasePlatform {
   protected PostgreSqlDdlBuilder createDdlBuilder() {
     PostgreSqlDdlBuilder postgreSqlDdlBuilder = new PostgreSqlDdlBuilder() {
       private String[] quotedIdentifiers = {"LIMIT", "AS", "modify"};
+
+      @Override
+      protected void writePrimaryKeyStmt(Table table, Column[] primaryKeyColumns, StringBuilder ddl) {
+        ddl.append("CONSTRAINT " + " PK_").append(table.getName()).append(" ");
+        super.writePrimaryKeyStmt(table, primaryKeyColumns, ddl);
+      }
 
       @Override
       protected String getDelimitedIdentifier(String identifier) {

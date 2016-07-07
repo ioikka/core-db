@@ -1,0 +1,31 @@
+# ----------------------------------------------------------------
+# !           Source DB settings                                 !
+# ----------------------------------------------------------------
+src.db.user=
+src.db.password=
+src.db.url=jdbc:oracle:thin:@[host]:[port]:[SID]
+
+# ----------------------------------------------------------------
+# !           Destination DB Settings                            !
+# ----------------------------------------------------------------
+dst.db.user=
+dst.db.password=
+dst.db.url=jdbc:postgresql://[host]:[port]/[db_name]
+
+# ----------------------------------------------------------------
+# !           Misc settings                                      !
+# ----------------------------------------------------------------
+dst.create.fks=true
+dst.create.checks=true
+dst.create.sequences=true
+dst.create.views=true
+dst.create.uqs=true
+dst.convert.blobs=true
+
+#dir to save csv data files
+csv.dir=
+#tables data not to export (metadata is exported)
+excluded.tables=DAYVERSION
+
+export.to.csv=true
+import.from.csv=true
