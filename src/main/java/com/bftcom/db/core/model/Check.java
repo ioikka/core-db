@@ -1,9 +1,5 @@
 package com.bftcom.db.core.model;
 
-/**
- * @author ikka
- * @date: 06.07.2016.
- */
 public class Check  extends Constraint {
   private String searchCondition;
 

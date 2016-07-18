@@ -17,7 +17,7 @@ public class PostgresqlView extends View {
   public String getCreateSql() {
     String result = "";
     if (columnsAsString != null && sql != null) {
-      result = String.format(CREATE_TEMPLATE, viewName, columnsAsString, sql.replaceAll("SYSDATE", "CURRENT_DATE"));//Oracle SYSDATE. And if not Oracle? todo
+      result = String.format(CREATE_TEMPLATE, name, columnsAsString, sql.replaceAll("SYSDATE", "CURRENT_DATE"));//Oracle SYSDATE. And if not Oracle? todo
     }
     return result;
   }

@@ -8,23 +8,24 @@ import java.util.List;
  * @author ikka
  * @date: 02.07.2016.
  */
-public class View {
+public class View extends DBObject {
   /**
    * a substring from the original ddl statement (order of col names is kept to the original order).
    */
   protected String columnsAsString;
-  protected String viewName;
-  protected List<String> columnNames;//all cols' names
-  protected String statement;
-  protected String ddl;//complete ddl with create view part
+  protected String name;
+  private List<String> columnNames;//all cols' names
+  private String statement;
+  private String ddl;//complete ddl with create view part
   protected String sql;//after as
-  protected String createSql;
+  private String createSql;
 
   public View() {
+    super();
   }
 
   public View(View view){
-    this.viewName = view.viewName;
+    this.name = view.name;
     this.columnsAsString = view.columnsAsString;
     this.columnNames = view.columnNames;
     this.statement = view.statement;
@@ -33,13 +34,6 @@ public class View {
     this.createSql = view.createSql;
   }
 
-  public String getViewName() {
-    return viewName;
-  }
-
-  public void setViewName(String viewName) {
-    this.viewName = viewName;
-  }
 
   public List<String> getColumnNames() {
     return columnNames;
@@ -80,9 +74,5 @@ public class View {
 
   public void setColumnsAsString(String columnsAsString) {
     this.columnsAsString = columnsAsString;
-  }
-
-  public String getCreateSql() {
-    throw new NotImplementedException();
   }
 }

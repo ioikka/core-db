@@ -19,7 +19,7 @@ public class OracleView extends View {
 
   public static void fillDdl(DataSource dataSource, View view) throws SQLException {
     try (Connection connection = dataSource.getConnection()) {
-      try (ResultSet resultSet = connection.createStatement().executeQuery("SELECT dbms_metadata.get_ddl('VIEW','" + view.getViewName() + "') FROM DUAL")) {
+      try (ResultSet resultSet = connection.createStatement().executeQuery("SELECT dbms_metadata.get_ddl('VIEW','" + view.getName() + "') FROM DUAL")) {
         if (resultSet.next()) {
           String ddl = resultSet.getString(1);
           view.setDdl(ddl);

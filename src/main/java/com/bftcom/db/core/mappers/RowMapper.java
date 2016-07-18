@@ -2,24 +2,24 @@ package com.bftcom.db.core.mappers;
 
 import org.jumpmind.db.sql.ISqlRowMapper;
 import org.jumpmind.db.sql.Row;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * @author ikka
- * @date: 06.07.2016.
- */
-public class RowMapper<T> implements ISqlRowMapper<T> {
+abstract public class RowMapper<T> implements ISqlRowMapper<T> {
+  private static Logger logger = LoggerFactory.getLogger(RowMapper.class);
 
-  protected Class<T> clazz;
+  private Class<T> clazz;
 
   public RowMapper(Class clazz) {
+    //noinspection unchecked
     this.clazz = clazz;
   }
 
-  public T getInstance() {
+  protected T getInstance() {
     try {
       return clazz.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
-      e.printStackTrace();
+      logger.error("", e);
     }
     return null;
   }

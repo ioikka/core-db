@@ -14,10 +14,11 @@ import java.util.Properties;
  */
 public class Bootstrap {
   private static Logger logger = LoggerFactory.getLogger(Bootstrap.class);
+  public static final String PROJECT_PROPERTIES_FILENAME = "project.properties";
 
   static {
     Properties props = new Properties();
-    try (FileInputStream inStream = new FileInputStream("project.properties")) {
+    try (FileInputStream inStream = new FileInputStream(PROJECT_PROPERTIES_FILENAME)) {
       props.load(inStream);
       for (Object o : props.keySet()) {
         String s = (String) o;

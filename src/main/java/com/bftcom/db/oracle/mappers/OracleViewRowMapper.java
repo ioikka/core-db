@@ -35,7 +35,7 @@ public class  OracleViewRowMapper<T extends View> extends RowMapper<T> {
   @Override
   public T mapRow(Row row) {
     T i = getInstance();
-    i.setViewName(row.getString(COLS.VIEW_NAME.name()));
+    i.setName(row.getString(COLS.VIEW_NAME.name()));
     i.setSql(row.getString(COLS.TEXT.name()));
     return i;
   }
