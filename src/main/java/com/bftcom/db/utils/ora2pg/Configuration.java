@@ -9,6 +9,7 @@ abstract public class Configuration {
   public static final String DST_DB_USER = "dst.db.user";
   public static final String DST_DB_PASSWORD = "dst.db.password";
   public static final String DST_DB_URL = "dst.db.url";
+  public static final String DST_CREATE_TABLES = "dst.create.tables";
   public static final String EXCLUDED_TABLES = "excluded.tables";
 
   public static final String EXPORT_TO_CSV = "export.to.csv";

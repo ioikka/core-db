@@ -25,7 +25,7 @@ public class Bootstrap {
         System.setProperty(s, String.valueOf(props.get(s)));
       }
     } catch (IOException e) {
-      logger.warn(StringUtils.EMPTY, e);
+      logger.warn("", e);
     }
   }
 

@@ -19,6 +19,7 @@ import com.bftcom.db.postgresql.PSQLState;
 import com.bftcom.db.postgresql.PostgresqlSqlStatements;
 import com.bftcom.db.postgresql.model.PostgresqlView;
 import org.apache.commons.dbcp.BasicDataSourceFactory;
+import org.apache.commons.lang.StringUtils;
 import org.jumpmind.db.model.Column;
 import org.jumpmind.db.model.Database;
 import org.jumpmind.db.model.ForeignKey;
@@ -37,12 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -52,6 +48,8 @@ import java.util.Properties;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.bftcom.db.utils.ora2pg.Configuration.DST_CREATE_TABLES;
 
 /**
  * @author ikka
@@ -131,7 +129,6 @@ public class Converter {
   }
 
 
-
   public Table[] createTablesInDstDatabase() throws CloneNotSupportedException {
     Table[] srcTables = deserializeSrcMetadata();
 
@@ -148,12 +145,12 @@ public class Converter {
 
       dstTable.removeAllIndices();
 
-      for (ForeignKey foreignKey : dstTable.getForeignKeys()) {
-        if (foreignKey.getName().equalsIgnoreCase("fk_conbudget_kfsr")) {
-
-          System.out.println("");
-        }
-      }
+//      for (ForeignKey foreignKey : dstTable.getForeignKeys()) {
+//        if (foreignKey.getName().equalsIgnoreCase("fk_conbudget_kfsr")) {
+//
+//          System.out.println("");
+//        }
+//      }
 
       dstTable.removeAllForeignKeys();
       dstTable.setSchema(null);
@@ -164,7 +161,9 @@ public class Converter {
 
     serializeSrcMetadata(srcTables);
 
-    dstPlatform.createTables(false, true, dstTables);//long operation ahead
+    if (TRUE.equals(props.getProperty(Configuration.DST_CREATE_TABLES))) {
+      dstPlatform.createTables(false, true, dstTables);//long operation ahead
+    }
     return dstTables;
   }
 
@@ -175,9 +174,13 @@ public class Converter {
   }
 
   private void serializeMetadata(Object o, String fileName) {
-    try (FileOutputStream os = new FileOutputStream(new File(fileName)); ObjectOutputStream in = new ObjectOutputStream(os)){
+    File outputFile = new File(fileName);
+    try (FileOutputStream os = new FileOutputStream(outputFile); ObjectOutputStream in = new ObjectOutputStream(os)) {
+      logger.info("serialiazing metadata from file");
+      long start = System.currentTimeMillis();
       in.writeObject(o);
       in.flush();
+      logger.info("Metadata serialized in " + (System.currentTimeMillis() - start) + " ms" + "( see file " + outputFile.getAbsolutePath() + " )");
     } catch (IOException e) {
       logger.warn("", e);
     }
@@ -198,6 +201,7 @@ public class Converter {
     }
     return srcTables;
   }
+
   private Table[] deserializeSrcMetadata() {
     if (TRUE.equals(props.get(Configuration.SRC_SERIALIAZE_METADATA))) {
       return deserializeMetadata(SRC_TABLES);
@@ -226,6 +230,9 @@ public class Converter {
 
       for (String tableName : tableNames) {
         try {
+//          if (!tableName.equalsIgnoreCase("ACCBOOK")) {
+//            continue;
+//          }
           long startTime = System.currentTimeMillis();
           dbExport.exportTables(new String[]{tableName});
           logger.info(String.format("Table %s exported to %s%s.csv file in %d ms", tableName, dbExport.getDir(), tableName, System.currentTimeMillis() - startTime));
@@ -439,18 +446,72 @@ public class Converter {
 
   public void importFromCsv(List<String> excludedTableList, IDatabasePlatform dstPlatform, String[] tableNames) {
     if (TRUE.equals(props.getProperty(Configuration.IMPORT_FROM_CSV))) {
+
+      logger.info("Temporary disabling all contraints");
       for (String tableName : tableNames) {
         if (excludedTableList.contains(tableName)) {
           continue;
         }
-        long start = System.currentTimeMillis();
-        dstPlatform.getSqlTemplate().update("TRUNCATE TABLE " + tableName);
-        String absoluteFileName = System.getProperty(Configuration.CSV_DIR) + tableName + ".csv";
+        dstPlatform.getSqlTemplate().update("ALTER TABLE " + tableName + " DISABLE TRIGGER ALL");
+      }
 
-        String sql = String.format("COPY %s FROM '%s' WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, absoluteFileName);
-        System.out.println(sql);
+      for (String tableName : tableNames) {
+        if (excludedTableList.contains(tableName)) {
+          continue;
+        }
+        dstPlatform.getSqlTemplate().update("DELETE  FROM " + tableName);
+      }
+
+      for (String tableName : tableNames) {
+//        String tableToStartFrom = "SYSTEMSITE";
+//        if (tableName.compareToIgnoreCase(tableToStartFrom) < 1) {
+//          if (tableName.equalsIgnoreCase(tableToStartFrom)) {
+//
+//          } else {
+//            continue;
+//          }
+//        }
+        if (excludedTableList.contains(tableName)) {
+          continue;
+        }
+        long start = System.currentTimeMillis();
+
+        String header = null;
+        String absoluteFileName = System.getProperty(Configuration.CSV_DIR) + tableName + ".csv";
+        try (BufferedReader brTest = new BufferedReader(new FileReader(absoluteFileName))) {
+          header = brTest.readLine();
+        } catch (IOException e) {
+          logger.error("", e);
+        }
+
+        String cols = "";
+        if (header != null && header.length() > 0) {
+          cols = header.replaceAll("\"", "");
+          String[] split = cols.split(",");
+          for (int i = 0; i < split.length; i++) {
+            if (split[i].equalsIgnoreCase("LIMIT") || split[i].equalsIgnoreCase("modify") || split[i].equalsIgnoreCase("AS")) {
+              split[i] = "\"" + split[i] + "\"";
+            }
+          }
+          cols = StringUtils.join(split, ",");
+
+        } else {
+          logger.warn("Skipping data import for table " + tableName);
+          continue;
+        }
+
+        String sql = String.format("COPY %s (%s) FROM '%s' WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, cols, absoluteFileName);
+        logger.info(sql);
         dstPlatform.getSqlTemplate().update(sql);
         logger.info(String.format("Table %s imported in %d ms", tableName, System.currentTimeMillis() - start));
+      }
+
+      logger.info("Reeanbling all contraints");
+      for (String tableName : tableNames) {
+        if (excludedTableList.contains(tableName)) {
+          continue;
+        }
+        dstPlatform.getSqlTemplate().update("ALTER TABLE " + tableName + " ENABLE TRIGGER ALL");
       }
     }
   }
