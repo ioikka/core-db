@@ -42,9 +42,9 @@
     </dependency>
 
     <!--<dependency>-->
-      <!--<groupId>jdbc.oracle</groupId>-->
-      <!--<artifactId>ojdbc5</artifactId>-->
-      <!--<version>11.1.0.6.0</version>-->
+    <!--<groupId>jdbc.oracle</groupId>-->
+    <!--<artifactId>ojdbc5</artifactId>-->
+    <!--<version>11.1.0.6.0</version>-->
     <!--</dependency>-->
 
     <dependency>
@@ -95,6 +95,90 @@
           <!-- or whatever version you use -->
           <source>1.8</source>
           <target>1.8</target>
+        </configuration>
+      </plugin>
+
+      <!--<plugin>-->
+      <!--<groupId>org.apache.maven.plugins</groupId>-->
+      <!--<artifactId>maven-shade-plugin</artifactId>-->
+      <!--<version>2.4.3</version>-->
+      <!--<configuration>-->
+      <!--&lt;!&ndash; put your configurations here &ndash;&gt;-->
+      <!--<transformers>-->
+      <!--&lt;!&ndash; add Main-Class to manifest file &ndash;&gt;-->
+      <!--<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">-->
+      <!--<mainClass>com.bftcom.db.utils.ora2pg.Main</mainClass>-->
+      <!--</transformer>-->
+      <!--</transformers>-->
+      <!--</configuration>-->
+      <!--<executions>-->
+      <!--<execution>-->
+      <!--<phase>package</phase>-->
+      <!--<goals>-->
+      <!--<goal>shade</goal>-->
+      <!--</goals>-->
+      <!--</execution>-->
+      <!--</executions>-->
+      <!--</plugin>-->
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.10</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>copy-resources-1</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/lib</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>lib</directory>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib</classpathPrefix>
+              <mainClass>com.bftcom.db.utils.ora2pg.Main</mainClass>
+            </manifest>
+            <manifestEntries>
+              <Class-Path>lib/ojdbc7.jar</Class-Path>
+            </manifestEntries>
+          </archive>
         </configuration>
       </plugin>
     </plugins>

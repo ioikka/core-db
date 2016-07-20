@@ -145,13 +145,6 @@ public class Converter {
 
       dstTable.removeAllIndices();
 
-//      for (ForeignKey foreignKey : dstTable.getForeignKeys()) {
-//        if (foreignKey.getName().equalsIgnoreCase("fk_conbudget_kfsr")) {
-//
-//          System.out.println("");
-//        }
-//      }
-
       dstTable.removeAllForeignKeys();
       dstTable.setSchema(null);
 
