@@ -1,5 +1,6 @@
 package com.bftcom.db.postgresql;
 
+import com.bftcom.db.utils.ora2pg.Configuration;
 import org.jumpmind.db.model.Column;
 import org.jumpmind.db.model.Table;
 import org.jumpmind.db.platform.postgresql.PostgreSqlDatabasePlatform;
@@ -44,8 +45,8 @@ public class BftPostgreSqlDatabasePlatform extends PostgreSqlDatabasePlatform {
   @Override
   protected PostgreSqlDdlBuilder createDdlBuilder() {
     PostgreSqlDdlBuilder postgreSqlDdlBuilder = new PostgreSqlDdlBuilder() {
-      private String[] quotedIdentifiers = {"LIMIT", "AS", "modify"};
-
+      private String[] quotedIdentifiers = System.getProperty(Configuration.DST_DB_QUOTED_COLS).split(",");
+      
       @Override
       protected void writePrimaryKeyStmt(Table table, Column[] primaryKeyColumns, StringBuilder ddl) {
         ddl.append("CONSTRAINT " + " PK_").append(table.getName()).append(" ");
