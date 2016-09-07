@@ -472,7 +472,7 @@ public class Converter {
 
         String header = null;
         String absoluteFileName = props.getProperty(Configuration.CSV_DIR) + tableName + ".csv";
-        try (BufferedReader brTest = new BufferedReader(new FileReader(absoluteFileName))) {
+        try (BufferedReader brTest = new BufferedReader(new FileReader(new File(absoluteFileName)))) {
           header = brTest.readLine();
         } catch (IOException e) {
           logger.error("", e);
