@@ -24,12 +24,16 @@ import org.jumpmind.db.sql.SqlException;
 import org.jumpmind.db.sql.SqlTemplateSettings;
 import org.jumpmind.symmetric.io.data.DbExport;
 import org.jumpmind.symmetric.model.Sequence;
+import org.postgresql.copy.CopyManager;
+import org.postgresql.core.BaseConnection;
 import org.postgresql.util.PSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -465,7 +469,7 @@ public class Converter {
           continue;
         }
 
-        if (!includedTableList.isEmpty() && !includedTableList.contains(tableName)) {
+        if (!includedTableList.isEmpty() && includedTableList.contains(tableName)) {
           continue;
         }
         long start = System.currentTimeMillis();
@@ -501,9 +505,16 @@ public class Converter {
           logger.warn("Skipping data import for table " + tableName);
           continue;
         }
-
-        String sql = String.format("COPY %s (%s) FROM '%s' WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, cols, absoluteFileName);
-        dstPlatform.getSqlTemplate().update(sql);
+        try (Connection con = DriverManager.getConnection(dstProperties.getProperty(URL), dstProperties.getProperty(USERNAME), dstProperties.getProperty(PASSWORD))) {
+          CopyManager copyManager = new CopyManager((BaseConnection) con);
+          FileReader fileReader = new FileReader(new File(absoluteFileName.replaceAll("/", "\\\\")));
+          copyManager.copyIn(String.format("COPY %s (%s) FROM STDIN WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ", tableName, cols), fileReader);
+//          copyManager.copyIn(String.format("COPY %s (%s) FROM STDIN WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, cols), fileReader);
+        } catch (SQLException | IOException e) {
+          logger.error("", e);
+        }
+//        String sql = String.format("COPY %s (%s) FROM '%s' WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, cols, absoluteFileName.replaceAll("/", "\\\\"));
+//        dstPlatform.getSqlTemplate().update(sql);
         logger.info(String.format("Table %s imported in %d ms", tableName, System.currentTimeMillis() - start));
       }
 
