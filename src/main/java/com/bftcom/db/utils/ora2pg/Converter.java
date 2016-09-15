@@ -60,6 +60,7 @@ public class Converter {
   private Properties props;
   private String[] excludedTables;
   private String[] includedTables;
+  private String[] exclusiveTables;
   private IDatabasePlatform srcPlatform;
   private IDatabasePlatform dstPlatform;
   private Properties srcProperties;
@@ -105,6 +106,14 @@ public class Converter {
   private void config() throws Exception {
     excludedTables = props.getProperty(Configuration.EXCLUDED_TABLES).trim().split(",");
     includedTables = props.getProperty(Configuration.INCLUDED_TABLES).split(",");
+    if (props.getProperty(Configuration.EXCLUSIVE_TABLES) != null) {
+      exclusiveTables = props.getProperty(Configuration.EXCLUSIVE_TABLES).split(",");
+      if (exclusiveTables == null) {
+        exclusiveTables = new String[0];
+      }
+    } else {
+      exclusiveTables = new String[0];
+    }
 
 
     srcProperties = dbPropertiesBuilder(props, Configuration.SRC_DB_USER, Configuration.SRC_DB_PASSWORD, Configuration.SRC_DB_URL);
@@ -218,10 +227,14 @@ public class Converter {
       dbExport.setUseVariableForDates(false);
       dbExport.setDir(props.getProperty(Configuration.CSV_DIR));
 
+      
       for (String tableName : tableNames) {
+        if (exclusiveTables.length > 0 && !Arrays.asList(this.exclusiveTables).contains(tableName)) {
+          continue;
+        }
         List<String> includedTableList = Arrays.asList(this.includedTables);
         try {
-          if (!includedTableList.isEmpty() && !includedTableList.contains(tableName)) {
+          if (!includedTableList.isEmpty() && includedTableList.contains(tableName)) {
             continue;
           }
           long startTime = System.currentTimeMillis();
@@ -438,29 +451,49 @@ public class Converter {
   public void importFromCsv(List<String> excludedTableList, List<String> includedTableList, IDatabasePlatform dstPlatform, String[] tableNames) {
     if (TRUE.equals(props.getProperty(Configuration.IMPORT_FROM_CSV))) {
       String includedTables = props.getProperty(Configuration.INCLUDED_TABLES);
-
       logger.info("Temporary disabling all contraints");
+
+      List<String> exclusiveTables = Arrays.asList(this.exclusiveTables);
       for (String tableName : tableNames) {
+        if (this.exclusiveTables.length > 0 && !Arrays.asList(this.exclusiveTables).contains(tableName)) {
+          continue;
+        }
         if (excludedTableList.contains(tableName)) {
           continue;
         }
+        try {
         dstPlatform.getSqlTemplate().update("ALTER TABLE " + tableName + " DISABLE TRIGGER ALL");
+        } catch (SqlException e) {
+          logger.error("", e);
+        }
       }
 
-
       for (String tableName : tableNames) {
         if (excludedTableList.contains(tableName)) {
           continue;
         }
 
-
         String deleteTableSql = "DELETE  FROM " + tableName;
+        if (this.exclusiveTables.length > 0) {
+          if (!Arrays.asList(this.exclusiveTables).contains(tableName)) {
+            continue;
+          }
+        }
+
         if (!includedTableList.isEmpty()) {
-          if (includedTableList.contains(tableName)) {
-            dstPlatform.getSqlTemplate().update(deleteTableSql);//only included tables are truncated
+          if (!includedTableList.contains(tableName)) {
+            try {
+              dstPlatform.getSqlTemplate().update(deleteTableSql);//only included tables are truncated
+            } catch (SqlException e) {
+              logger.error("", e);
+            }
           }
         } else {
-          dstPlatform.getSqlTemplate().update(deleteTableSql);//all tables are truncated
+          try {
+            dstPlatform.getSqlTemplate().update(deleteTableSql);//all tables are truncated
+          } catch (SqlException e) {
+            logger.error("", e);
+          }
         }
       }
 
@@ -470,6 +503,10 @@ public class Converter {
         }
 
         if (!includedTableList.isEmpty() && includedTableList.contains(tableName)) {
+          continue;
+        }
+
+        if (this.exclusiveTables.length > 0 && !Arrays.asList(this.exclusiveTables).contains(tableName)) {
           continue;
         }
         long start = System.currentTimeMillis();
@@ -510,7 +547,7 @@ public class Converter {
           FileReader fileReader = new FileReader(new File(absoluteFileName.replaceAll("/", "\\\\")));
           copyManager.copyIn(String.format("COPY %s (%s) FROM STDIN WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ", tableName, cols), fileReader);
 //          copyManager.copyIn(String.format("COPY %s (%s) FROM STDIN WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, cols), fileReader);
-        } catch (SQLException | IOException e) {
+        } catch (SqlException | SQLException | IOException e) {
           logger.error("", e);
         }
 //        String sql = String.format("COPY %s (%s) FROM '%s' WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, cols, absoluteFileName.replaceAll("/", "\\\\"));
@@ -523,7 +560,14 @@ public class Converter {
         if (excludedTableList.contains(tableName)) {
           continue;
         }
-        dstPlatform.getSqlTemplate().update("ALTER TABLE " + tableName + " ENABLE TRIGGER ALL");
+        if (this.exclusiveTables.length > 0 && !Arrays.asList(this.exclusiveTables).contains(tableName)) {
+          continue;
+        }
+        try {
+          dstPlatform.getSqlTemplate().update("ALTER TABLE " + tableName + " ENABLE TRIGGER ALL");
+        } catch (SqlException e) {
+          logger.error("", e);
+        }
       }
     }
   }

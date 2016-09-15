@@ -14,6 +14,7 @@ abstract public class Configuration {
 
   public static final String EXCLUDED_TABLES = "excluded.tables";
   public static final String INCLUDED_TABLES = "included.tables";
+  public static final String EXCLUSIVE_TABLES = "exclusive.tables";
   public static final String EXPORT_TO_CSV = "export.to.csv";
   public static final String DST_CONVERT_BLOBS = "dst.convert.blobs";
   public static final String DST_CONVERT_VIEWS = "dst.convert.views";
