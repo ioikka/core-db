@@ -12,6 +12,7 @@ import com.bftcom.db.postgresql.PostgresqlSqlStatements;
 import com.bftcom.db.postgresql.model.PostgresqlView;
 import org.apache.commons.dbcp.BasicDataSourceFactory;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.jumpmind.db.model.Column;
 import org.jumpmind.db.model.Database;
 import org.jumpmind.db.model.Table;
@@ -227,7 +228,7 @@ public class Converter {
       dbExport.setUseVariableForDates(false);
       dbExport.setDir(props.getProperty(Configuration.CSV_DIR));
 
-      
+
       for (String tableName : tableNames) {
         if (exclusiveTables.length > 0 && !Arrays.asList(this.exclusiveTables).contains(tableName)) {
           continue;
@@ -462,7 +463,7 @@ public class Converter {
           continue;
         }
         try {
-        dstPlatform.getSqlTemplate().update("ALTER TABLE " + tableName + " DISABLE TRIGGER ALL");
+          dstPlatform.getSqlTemplate().update("ALTER TABLE " + tableName + " DISABLE TRIGGER ALL");
         } catch (SqlException e) {
           logger.error("", e);
         }
@@ -513,6 +514,7 @@ public class Converter {
 
         String header = null;
         String absoluteFileName = props.getProperty(Configuration.CSV_DIR) + tableName + ".csv";
+        logger.info("File to import " + absoluteFileName);
         try (BufferedReader brTest = new BufferedReader(new FileReader(new File(absoluteFileName)))) {
           header = brTest.readLine();
         } catch (IOException e) {
@@ -544,14 +546,16 @@ public class Converter {
         }
         try (Connection con = DriverManager.getConnection(dstProperties.getProperty(URL), dstProperties.getProperty(USERNAME), dstProperties.getProperty(PASSWORD))) {
           CopyManager copyManager = new CopyManager((BaseConnection) con);
-          FileReader fileReader = new FileReader(new File(absoluteFileName.replaceAll("/", "\\\\")));
+          FileReader fileReader = null;
+          if (SystemUtils.IS_OS_UNIX || SystemUtils.IS_OS_LINUX) {
+            fileReader = new FileReader(new File(absoluteFileName));
+          } else if (SystemUtils.IS_OS_WINDOWS) {
+            fileReader = new FileReader(new File(absoluteFileName.replaceAll("/", "\\\\")));
+          }
           copyManager.copyIn(String.format("COPY %s (%s) FROM STDIN WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ", tableName, cols), fileReader);
-//          copyManager.copyIn(String.format("COPY %s (%s) FROM STDIN WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, cols), fileReader);
         } catch (SqlException | SQLException | IOException e) {
           logger.error("", e);
         }
-//        String sql = String.format("COPY %s (%s) FROM '%s' WITH DELIMITER ',' CSV HEADER ESCAPE '\\' ENCODING 'WIN1251'", tableName, cols, absoluteFileName.replaceAll("/", "\\\\"));
-//        dstPlatform.getSqlTemplate().update(sql);
         logger.info(String.format("Table %s imported in %d ms", tableName, System.currentTimeMillis() - start));
       }
 

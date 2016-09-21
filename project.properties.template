@@ -22,7 +22,7 @@ dst.create.views=true
 dst.create.uqs=true
 dst.convert.blobs=true
 
-#dir to save csv data files
+#dir to save csv data files (use / as separator)
 csv.dir=
 #tables data not to export (metadata is exported)
 excluded.tables=DAYVERSION

@@ -23,6 +23,12 @@
   </repositories>
 
   <dependencies>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.4</version>
+    </dependency>
     <dependency>
       <groupId>org.jumpmind.symmetric</groupId>
       <artifactId>symmetric-io</artifactId>
@@ -43,9 +49,9 @@
 
     <!-- https://mvnrepository.com/artifact/org.firebirdsql.jdbc/jaybird -->
     <!--<dependency>-->
-      <!--<groupId>org.firebirdsql.jdbc</groupId>-->
-      <!--<artifactId>jaybird</artifactId>-->
-      <!--<version>2.2.5</version>-->
+    <!--<groupId>org.firebirdsql.jdbc</groupId>-->
+    <!--<artifactId>jaybird</artifactId>-->
+    <!--<version>2.2.5</version>-->
     <!--</dependency>-->
 
 
@@ -182,6 +188,7 @@
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib</classpathPrefix>
               <mainClass>com.bftcom.db.utils.ora2pg.Main</mainClass>
+              <!--<mainClass>com.TT</mainClass>-->
             </manifest>
             <manifestEntries>
               <Class-Path>lib/ojdbc7.jar</Class-Path>
